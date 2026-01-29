@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SuperFinTech: Gestiona tus finanzas, controla tus gastos, administra tus ahorros, préstamos y tandas de forma segura y fácil desde cualquier dispositivo.">
+    <title>SuperFinTech</title>
+
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2489/2489299.png">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2489/2489299.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#121212">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<main>
+<div id="login-screen" class="login-wrap">
+<div class="login-box">
+<button class="help-btn-login" onclick="mostrarAyudaLogin()">❓</button>
+
+<img src="https://cdn-icons-png.flaticon.com/512/2489/2489299.png" style="width: 80px; margin-bottom: 15px;" alt="Logotipo SuperFinTech">
+<h1 style="margin:0; font-size: 1.8em; color: var(--text);">SuperFinTech</h1>
+<p style="color: #333; margin-bottom: 25px;">
+Versión 32
+</p>
+
+<input type="email" id="email" placeholder="Correo electrónico">
+
+<div class="input-group">
+<input type="password" id="password" placeholder="Contraseña">
+<button class="eye-icon" onclick="togglePassLogin()" id="btn-eye">👁️</button>
+</div>
+
+<button class="primary" onclick="iniciarSesion()">Ingresar</button>
+<button class="secondary" onclick="registrarse()">Crear Cuenta</button>
+
+<a class="forgot-link" onclick="recuperarContra()">¿Olvidaste tu contraseña?</a>
+</div>
+</div>
+</main>
+
+<div id="app-screen" class="app-container hidden">
+<div class="header">
+<div style="display:flex; align-items:center; gap:10px;">
+<img src="https://cdn-icons-png.flaticon.com/512/2489/2489299.png" style="width: 25px;" alt="Logotipo SuperFinTech">
+<h3 style="margin:0; color:var(--text);">SuperFinTech</h3>
+</div>
+<div>
+<button class="btn-mini" onclick="toggleTheme()" id="theme-btn">🌙</button>
+<button class="btn-mini" onclick="abrirConfiguracion()">⚙️</button>
+<button class="btn-mini" onclick="cerrarSesion()" style="color:red; border-color:red;">🚪</button>
+</div>
+</div>
+
+<div id="seccion-inicio">
+<div class="card" style="height:220px; display:flex; justify-content:center;">
+<canvas id="financeChart"></canvas>
+</div>
+
+<div class="dash-grid">
+<div class="stat-card bg-orange">
+<h3>Ganancia</h3><p id="dash-ganancia">
+$0
+</p>
+</div>
+<div class="stat-card bg-blue">
+<h3>Prestado</h3><p id="dash-capital">
+$0
+</p>
+</div>
+<div class="stat-card bg-red">
+<h3>Por Cobrar</h3><p id="dash-deuda">
+$0
+</p>
+</div>
+<div class="stat-card bg-green">
+<h3>Caja Ahorro</h3><p id="dash-ahorro">
+$0
+</p>
+</div>
+</div>
+<div class="dash-grid" style="grid-template-columns: repeat(3, 1fr);">
+<div class="stat-card bg-purple">
+<h3>Clientes</h3><p id="dash-clientes">
+0
+</p>
+</div>
+<div class="stat-card bg-teal">
+<h3>Deudores</h3><p id="dash-activos-p">
+0
+</p>
+</div>
+<div class="stat-card bg-blue">
+<h3>Ahorradores</h3><p id="dash-activos-a">
+0
+</p>
+</div>
+</div>
+
+<div class="card">
+<h3 style="margin-top:0;">🔔 Historial Reciente</h3>
+<ul id="lista-reciente" class="recent-list"></ul>
+</div>
+</div>
+
+<div id="seccion-reportes" class="hidden">
+<h2 style="margin-top:0;">📊 Reportes</h2>
+<div class="report-grid">
+<div style="margin-top:10px; font-weight:bold; color:var(--active);">
+PRÉSTAMOS
+</div>
+<button class="report-btn" onclick="verBitacora('prestamos')"><span class="report-icon">📜</span> Bitácora General</button>
+<button class="report-btn" onclick="verReporteSemanal()"><span class="report-icon">📅</span> Reporte Semanal</button>
+<div style="margin-top:10px; font-weight:bold; color:#10b981;">
+AHORRO
+</div>
+<button class="report-btn" onclick="verBitacora('ahorro')"><span class="report-icon">🐷</span> Bitácora General</button>
+<div style="margin-top:10px; font-weight:bold; color:#8b5cf6;">
+TANDAS
+</div>
+<button class="report-btn" onclick="verBitacora('tandas')"><span class="report-icon">📦</span> Bitácora General</button>
+</div>
+<div id="visor-reportes" class="hidden card" style="margin-top:20px;">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<h3 id="titulo-visor">Reporte</h3><button class="btn-mini" id="btn-imprimir-reporte">🖨️ PDF</button>
+</div>
+<div class="table-responsive" style="max-height:400px; overflow-y:auto;">
+<table id="tabla-visor">
+<thead></thead>
+<tbody></tbody>
+</table>
+</div>
+<button class="secondary" onclick="document.getElementById('visor-reportes').classList.add('hidden')">Cerrar</button>
+</div>
+</div>
+
+<div id="seccion-clientes" class="hidden">
+<div class="card">
+<h3>Nuevo Cliente</h3>
+<button class="btn-admin" onclick="crearPerfilAdmin()">👤 + Agregarme (Admin)</button>
+<div class="row">
+<input id="cli-nombre" placeholder="Nombre"><input id="cli-tel" placeholder="Teléfono">
+</div>
+<div class="row">
+<select id="cli-relacion"><option value="Conocido">👋 Conocido</option><option value="Trabajo">💼 Trabajo</option><option value="Familiar">🏠 Familiar</option></select>
+<input id="cli-detalle" placeholder="Ej: Tío, Vecino">
+</div>
+<div style="margin-top:5px; font-size:0.8em;">
+<input type="checkbox" id="check-no-tel" onchange="toggleTel()"> Sin Teléfono
+</div>
+<button class="primary" onclick="guardarCliente()">Guardar</button>
+</div>
+<div class="card">
+<h3>Directorio</h3><div class="table-responsive">
+<table id="tabla-clientes">
+<thead>
+<tr><th>Nombre</th><th>Tel</th><th>Rel</th><th>Acción</th></tr>
+</thead>
+<tbody id="lista-clientes"></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<div id="seccion-prestamos" class="hidden">
+<div class="card">
+<h3>Nuevo Préstamo</h3>
+<select id="select-clientes-p"></select>
+<label style="font-size:0.8em;">Inicio:</label><input type="date" id="fecha-p">
+<div class="row">
+<input type="number" id="monto-p" placeholder="Monto $"><input type="number" id="interes-p" placeholder="Interés %" value="">
+</div>
+<div class="row">
+<input type="number" id="plazo-p" placeholder="Plazo" value=""><select id="frec-p"><option>Semanal</option><option>Quincenal</option></select>
+</div>
+<div id="loan-preview" class="info-box hidden"></div>
+<button class="primary" onclick="crearPrestamo()">Crear</button>
+</div>
+<div class="card">
+<h3>Préstamos Activos</h3><div id="lista-prestamos"></div>
+</div>
+</div>
+
+<div id="seccion-ahorro" class="hidden">
+<div class="card">
+<h3>Caja de Ahorro</h3>
+<select id="select-clientes-a" onchange="verSaldoAhorro()"><option value="">Selecciona Cliente</option></select>
+
+<div style="text-align:center; margin:15px 0;">
+<small style="color:var(--sec)">Saldo Disponible</small>
+<h1 id="saldo-ahorro-display" style="margin:0; color:#10b981;">$0.00</h1>
+</div>
+
+<h4 style="margin-bottom:10px;">Transacción</h4>
+<div class="row">
+<select id="tipo-ahorro">
+<option value="deposito">🟢 Depósito</option>
+<option value="retiro">🔴 Retiro</option>
+</select>
+</div>
+<input type="number" id="monto-ahorro" placeholder="Monto ($)">
+<input id="concepto-ahorro" placeholder="Concepto (Opcional)">
+<button class="primary" onclick="movimientoAhorro()">Confirmar</button>
+
+<div id="hist-ahorro-cli-wrapper" class="hidden" style="margin-top:20px;">
+<h4 style="margin-bottom:5px; border-bottom:1px solid #eee;">Historial</h4>
+<div style="max-height:200px; overflow-y:auto;">
+<table style="width:100%; font-size:0.9em; border-collapse: collapse;">
+<thead>
+<tr style="background:#f9f9f9; text-align:left;">
+<th style="padding:8px;">Fecha</th>
+<th style="padding:8px;">Tipo</th>
+<th style="padding:8px;">Monto</th>
+</tr>
+</thead>
+<tbody id="lista-ahorros-cliente"></tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+
+<div id="seccion-tandas" class="hidden">
+<div class="card">
+<h3>Nueva Tanda</h3>
+<input id="tanda-nom" placeholder="Nombre"><div class="row">
+<input type="number" id="tanda-monto" placeholder="Aporte"><select id="tanda-frec"><option>Semanal</option><option>Quincenal</option></select>
+</div>
+<input type="date" id="tanda-fecha"><button class="primary" onclick="crearTanda()">Crear Tanda</button>
+</div>
+<div class="card">
+<h3>Lista de Tandas</h3><div id="lista-tandas"></div>
+</div>
+</div>
+
+<div class="bottom-nav">
+<button class="nav-item active" onclick="nav('inicio',this)"><div class="nav-icon">
+🏠
+</div>
+Inicio</button>
+<button class="nav-item" onclick="nav('reportes',this)"><div class="nav-icon">
+📊
+</div>
+Reportes</button>
+<button class="nav-item" onclick="nav('clientes',this)"><div class="nav-icon">
+👥
+</div>
+Clientes</button>
+<button class="nav-item" onclick="nav('prestamos',this)"><div class="nav-icon">
+💸
+</div>
+Prestamos</button>
+<button class="nav-item" onclick="nav('ahorro',this)"><div class="nav-icon">
+🐷
+</div>
+Ahorro</button>
+<button class="nav-item" onclick="nav('tandas',this)"><div class="nav-icon">
+📦
+</div>
+Tandas</button>
+</div>
+
+</div>
+
+<div id="modal-abono" class="modal hidden">
+<div class="modal-content">
+<h3>Abonar</h3><p id="txt-deuda-modal"></p>
+<input type="hidden" id="id-p-modal"><input type="number" id="monto-abono" placeholder="$"><button class="primary" onclick="confirmarAbono()">Confirmar</button><button class="secondary" onclick="cerrar('modal-abono')">Cancelar</button>
+</div>
+</div>
+
+<div id="modal-historial" class="modal hidden">
+<div class="modal-content">
+<h3>📜 Historial Préstamo</h3><div style="background:#f9f9f9; padding:10px; margin-bottom:10px; border-radius:8px;">
+<p style="margin:2px;">
+Total Prestado: <b id="hist-tot-pres"></b>
+</p>
+<p style="margin:2px;">
+Total Deuda: <b id="hist-tot-deu"></b>
+</p>
+<p style="margin:2px;">
+Saldo: <b id="hist-saldo" style="color:red;"></b>
+</p>
+</div>
+<button class="btn-mini" style="background:#6f42c1; color:white; border:none; width:100%; padding:10px; margin-bottom:10px;" onclick="imprimirHistorialPDF()">🖨️ Imprimir Estado de Cuenta</button><div class="table-responsive" style="max-height:200px; overflow-y:auto;">
+<table id="tabla-historial-ind">
+<thead>
+<tr><th>Fecha</th><th>Abono</th><th>X</th></tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+<button class="secondary" onclick="cerrar('modal-historial')">Cerrar</button>
+</div>
+</div>
+
+<div id="modal-edit-cliente" class="modal hidden">
+<div class="modal-content">
+<h3>Editar Cliente</h3><input type="hidden" id="id-edit-c"><input id="nom-edit-c" placeholder="Nombre"><input id="tel-edit-c" placeholder="Teléfono"><input id="nota-edit-c" placeholder="Notas"><button class="primary" onclick="confirmarEditCliente()">Guardar</button><button class="secondary" onclick="cerrar('modal-edit-cliente')">Cancelar</button>
+</div>
+</div>
+
+<div id="modal-gest-tanda" class="modal hidden">
+<div class="modal-content">
+<h3 id="tit-gest-tanda">Gestionar Tanda</h3><button class="btn-mini" style="background:#6f42c1; color:white; width:100%; margin-bottom:10px;" onclick="generarPDFTanda()">📄 Imprimir Lista PDF</button><input type="hidden" id="id-gest-tanda"><div style="background:#f3f4f6; padding:10px; border-radius:8px; margin-bottom:10px;">
+<label style="font-size:0.8em; display:block;">Agregar Miembro:</label><select id="sel-miembro-tanda"></select><div class="row" style="margin-top:5px;">
+<input type="number" id="num-tanda" placeholder="Turno" style="flex:1;"><button class="primary" style="margin:0; flex:1;" onclick="agregarMiembroTanda()">Agregar</button>
+</div>
+</div>
+<div class="table-responsive" style="max-height:200px; overflow-y:auto;">
+<table id="tabla-miembros-tanda">
+<thead>
+<tr><th>#</th><th>Nombre</th><th>X</th></tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+<button class="secondary" onclick="cerrar('modal-gest-tanda')">Cerrar</button>
+</div>
+</div>
+
+<div id="modal-settings" class="modal hidden">
+<div class="modal-content" style="max-width: 450px;">
+
+<div class="about-header">
+<img src="https://cdn-icons-png.flaticon.com/512/2489/2489299.png" class="about-logo">
+<h2 style="margin: 0; color: var(--text);">SuperFinTech</h2>
+<div style="margin-top: 5px;">
+<span class="badge-version">Versión 32.0 (Stable)</span>
+</div>
+</div>
+
+<div class="creator-card">
+<div style="font-size: 0.9em; margin-bottom: 5px;">
+Creado con entusiasmo por:
+</div>
+<div class="creator-name">
+DanKing92 👑
+</div>
+<div style="font-size: 0.8em; color: var(--sec); margin-top: 5px;">
+Con coayuda de <strong>Gemini Pro 🤖</strong>
+</div>
+
+<div class="tech-stack">
+<span class="tech-pill">⚡ Supabase DB</span>
+<span class="tech-pill">☁️ Netlify Host</span>
+<span class="tech-pill">🛡️ JS Blindado</span>
+</div>
+</div>
+
+<p class="app-desc">
+<strong>SuperFinTech</strong> es tu aliada financiera personal. Diseñada para gestionar préstamos, cajas de ahorro y tandas de forma eficiente, segura y sin complicaciones. Todo el control de tu dinero en la palma de tu mano.
+</p>
+
+<div class="feature-grid">
+<div class="feat-item">
+✅ Dashboard en tiempo real
+</div>
+<div class="feat-item">
+✅ Reportes PDF y Excel
+</div>
+<div class="feat-item">
+✅ Integración WhatsApp
+</div>
+<div class="feat-item">
+✅ Modo Oscuro (Dark)
+</div>
+<div class="feat-item">
+✅ Cálculo Automático
+</div>
+<div class="feat-item">
+✅ Historial Detallado
+</div>
+</div>
+
+<hr style="border: 0.5px solid var(--border); margin: 20px 0;">
+
+<h4 style="margin:0 0 10px 0; text-align:left;">🛠️ Herramientas</h4>
+<button class="primary" style="background:#217346; margin-top:0;" onclick="exportarExcelDetallado()">📥 Descargar Respaldo Excel</button>
+
+<button class="btn-danger" style="margin-top: 15px; font-size: 0.8em;" onclick="borrarBaseDatosCompleta()">☢️ ELIMINAR BASE DE DATOS</button>
+
+<button class="secondary" style="margin-top: 15px;" onclick="cerrar('modal-settings')">Cerrar</button>
+</div>
+</div>
+
+
+<script src="script.js"></script>
+</body>
+</html>
