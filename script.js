@@ -881,3 +881,35 @@ alert("Error: " + error.message);
 alert("📧 ¡Enviado!\n\nRevisa tu correo (y la carpeta Spam). Te llegará un enlace mágico para entrar y cambiar tu contraseña.");
 }
 }
+
+// ==========================================
+// 📱 FUNCIONES DE WHATSAPP AUTOMÁTICO
+// ==========================================
+
+// Ayudante: Limpia el número y agrega lada MX si es necesario
+function formatearCelular(numero) {
+    if (!numero || numero === 'null') return null;
+    let limpio = numero.toString().replace(/\D/g, ''); // Quita espacios y guiones
+    
+    // Si tiene 10 dígitos (ej. 8717123456), agrega 52
+    if (limpio.length === 10) return '52' + limpio;
+    return limpio;
+}
+
+// A. COBRANZA (Para Préstamos)
+function whatsappPrestamo(nombre, telefono, monto, fecha) {
+    const cel = formatearCelular(telefono);
+    if (!cel) return alert("⚠️ El cliente no tiene celular registrado.");
+
+    const msg = `Hola ${nombre} 👋, paso a recordarte tu pago pendiente en *SuperFinTech*.\n\n💰 Saldo restante: $${monto}\n📅 Fecha corte: ${fecha}\n\nQuedo al pendiente. ¡Gracias!`;
+    window.open(`https://wa.me/${cel}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+// B. COMPROBANTE (Para Ahorros)
+function whatsappAhorro(nombre, telefono, monto, semana) {
+    const cel = formatearCelular(telefono);
+    if (!cel) return alert("⚠️ El cliente no tiene celular registrado.");
+
+    const msg = `¡Hola ${nombre}! 🌟\n\n✅ Confirmo que recibí tu ahorro.\n💰 Cantidad: $${monto}\n🗓️ Semana: ${semana}\n\n¡Sigue así! Tu meta está más cerca. 🚀`;
+    window.open(`https://wa.me/${cel}?text=${encodeURIComponent(msg)}`, '_blank');
+}
