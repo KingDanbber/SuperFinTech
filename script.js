@@ -290,7 +290,7 @@ box.classList.add('hidden');
 });
 
 async function cargarPrestamos() {
-    // 1. OJO: Pedimos el 'telefono' dentro de la tabla clientes
+    // 1. Pedimos también el teléfono del cliente
     const { data } = await _supabase
         .from('prestamos')
         .select('*, clientes(nombre_completo, telefono), abonos_prestamos(*)')
@@ -302,18 +302,20 @@ async function cargarPrestamos() {
     if (data) data.forEach(p => {
         const ab = p.abonos_prestamos ? p.abonos_prestamos.reduce((s, a)=>s+parseMoney(a.monto_abonado), 0): 0;
         const sal = parseMoney(p.monto_total_a_pagar) - ab;
+        // Calculamos frecuencia numérica aproximada
         const frecNum = parseInt(p.frecuencia_pago.match(/\d+/)) || 1; 
         const cuota = parseMoney(p.monto_total_a_pagar) / frecNum;
 
-        // Datos para WhatsApp
-        const nombre = p.clientes?.nombre_completo || 'Cliente';
-        const tel = p.clientes?.telefono || '';
-        const fecha = p.fecha_inicio ? new Date(p.fecha_inicio).toLocaleDateString() : 'hoy';
+        // Preparamos datos para WhatsApp
+        const nombreCliente = p.clientes?.nombre_completo || 'Cliente';
+        const telCliente = p.clientes?.telefono || '';
+        // Usamos la fecha de inicio como referencia o la actual
+        const fechaRef = p.fecha_inicio ? new Date(p.fecha_inicio).toLocaleDateString() : 'hoy';
 
         list.innerHTML += `
         <div class="loan-item">
             <div class="loan-header">
-                <strong>${nombre}</strong>
+                <strong>${nombreCliente}</strong>
                 <span style="color:${sal > 0?'#ef4444': '#10b981'}; font-weight:bold;">$${sal.toFixed(0)} Resta</span>
             </div>
             <progress value="${ab}" max="${p.monto_total_a_pagar}"></progress>
@@ -324,15 +326,15 @@ async function cargarPrestamos() {
                 <div class="loan-stat-box"><div>$${p.monto_prestado}</div>Prestado</div>
             </div>
 
-            <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+            <div style="display:flex; gap:10px; margin-top:10px;">
                 <button class="btn-pay" style="flex:1;" onclick="abrirAbono('${p.id}',${sal})">💰 Abonar</button>
                 
-                <button class="btn-wa-pro" onclick="whatsappPrestamo('${nombre}', '${tel}', '${sal.toFixed(2)}', '${fecha}')">
+                <button class="btn-wa-pro" onclick="whatsappPrestamo('${nombreCliente}', '${telCliente}', '${sal.toFixed(2)}', '${fechaRef}')">
                     📱 Cobrar
                 </button>
 
-                <button class="btn-hist" onclick="abrirHistorial('${p.id}')">📜</button>
-                <button class="btn-del" onclick="borrar('prestamos','${p.id}')">🗑️</button>
+                <button class="btn-hist" style="flex:0.3;" onclick="abrirHistorial('${p.id}')">📜</button>
+                <button class="btn-del" style="flex:0.3;" onclick="borrar('prestamos','${p.id}')">🗑️</button>
             </div>
         </div>`;
     });
