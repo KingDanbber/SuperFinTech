@@ -290,18 +290,54 @@ box.classList.add('hidden');
 });
 
 async function cargarPrestamos() {
-const {
-data
-} = await _supabase.from('prestamos').select('*, clientes(nombre_completo), abonos_prestamos(*)').eq('estado', 'activo');
-const list = document.getElementById('lista-prestamos'); list.innerHTML = '';
+    // 1. OJO: Pedimos el 'telefono' dentro de la tabla clientes
+    const { data } = await _supabase
+        .from('prestamos')
+        .select('*, clientes(nombre_completo, telefono), abonos_prestamos(*)')
+        .eq('estado', 'activo');
+    
+    const list = document.getElementById('lista-prestamos'); 
+    list.innerHTML = '';
 
-if (data) data.forEach(p => {
-const ab = p.abonos_prestamos ? p.abonos_prestamos.reduce((s, a)=>s+parseMoney(a.monto_abonado), 0): 0;
-const sal = parseMoney(p.monto_total_a_pagar) - ab;
-const cuota = parseMoney(p.monto_total_a_pagar) / (parseInt(p.frecuencia_pago.match(/\d+/)) || 1);
-list.innerHTML += `<div class="loan-item"><div class="loan-header"><strong>${p.clientes.nombre_completo}</strong><span style="color:${sal > 0?'#ef4444': '#10b981'}; font-weight:bold;">$${sal.toFixed(0)} Resta</span></div><progress value="${ab}" max="${p.monto_total_a_pagar}"></progress><div class="loan-stats"><div class="loan-stat-box"><div>$${cuota.toFixed(0)}</div>Cuota</div><div class="loan-stat-box"><div>$${p.monto_total_a_pagar}</div>Total</div><div class="loan-stat-box"><div>$${p.monto_prestado}</div>Prestado</div></div><div style="display:flex; gap:10px; margin-top:5px;"><button class="btn-pay" style="flex:1; padding:8px;" onclick="abrirAbono('${p.id}',${sal})">💰 Abonar</button><button class="btn-hist" style="flex:0.5; padding:8px;" onclick="abrirHistorial('${p.id}')">📜</button><button class="btn-del" style="flex:0.3; padding:8px;" onclick="borrar('prestamos','${p.id}')">🗑️</button></div></div>`;
-});
+    if (data) data.forEach(p => {
+        const ab = p.abonos_prestamos ? p.abonos_prestamos.reduce((s, a)=>s+parseMoney(a.monto_abonado), 0): 0;
+        const sal = parseMoney(p.monto_total_a_pagar) - ab;
+        const frecNum = parseInt(p.frecuencia_pago.match(/\d+/)) || 1; 
+        const cuota = parseMoney(p.monto_total_a_pagar) / frecNum;
+
+        // Datos para WhatsApp
+        const nombre = p.clientes?.nombre_completo || 'Cliente';
+        const tel = p.clientes?.telefono || '';
+        const fecha = p.fecha_inicio ? new Date(p.fecha_inicio).toLocaleDateString() : 'hoy';
+
+        list.innerHTML += `
+        <div class="loan-item">
+            <div class="loan-header">
+                <strong>${nombre}</strong>
+                <span style="color:${sal > 0?'#ef4444': '#10b981'}; font-weight:bold;">$${sal.toFixed(0)} Resta</span>
+            </div>
+            <progress value="${ab}" max="${p.monto_total_a_pagar}"></progress>
+            
+            <div class="loan-stats">
+                <div class="loan-stat-box"><div>$${cuota.toFixed(0)}</div>Cuota</div>
+                <div class="loan-stat-box"><div>$${p.monto_total_a_pagar}</div>Total</div>
+                <div class="loan-stat-box"><div>$${p.monto_prestado}</div>Prestado</div>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                <button class="btn-pay" style="flex:1;" onclick="abrirAbono('${p.id}',${sal})">💰 Abonar</button>
+                
+                <button class="btn-wa-pro" onclick="whatsappPrestamo('${nombre}', '${tel}', '${sal.toFixed(2)}', '${fecha}')">
+                    📱 Cobrar
+                </button>
+
+                <button class="btn-hist" onclick="abrirHistorial('${p.id}')">📜</button>
+                <button class="btn-del" onclick="borrar('prestamos','${p.id}')">🗑️</button>
+            </div>
+        </div>`;
+    });
 }
+
 
 async function crearPrestamo() {
 const c = document.getElementById('select-clientes-p').value, m = parseFloat(document.getElementById('monto-p').value), i = parseFloat(document.getElementById('interes-p').value), f = document.getElementById('frec-p').value, p = document.getElementById('plazo-p').value; let d = document.getElementById('fecha-p').value; if (!d) d = new Date().toISOString(); const total = m+(m*(i/100)); const frecFinal = `${f} (${p} pagos)`; await _supabase.from('prestamos').insert([{
