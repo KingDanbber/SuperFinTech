@@ -602,3 +602,29 @@
         align-items: center;
         gap: 5px;
     }
+
+/* === BOTÓN WHATSAPP PRO === */
+.btn-wa-pro {
+    background-color: #25D366; /* Verde Oficial */
+    color: white;
+    border: none;
+    border-radius: 50px; /* Redondeado tipo App */
+    padding: 6px 12px;
+    font-weight: 700;
+    font-size: 0.85em;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px; /* Espacio entre icono y texto */
+    text-decoration: none;
+    box-shadow: 0 2px 5px rgba(37, 211, 102, 0.3);
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.btn-wa-pro:active {
+    transform: scale(0.95); /* Efecto de click */
+}
+
+.btn-wa-pro:hover {
+    background-color: #1ebc57; /* Verde un poco más oscuro */
+}
