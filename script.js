@@ -67,14 +67,72 @@ return parseFloat(clean) || 0;
 
 // --- DASHBOARD V32 (HISTORIAL AMPLIADO) ---
 async function cargarDashboard() {
-try {
-// 1. Contadores
-const {
-count: totalClientes
-} = await _supabase.from('clientes').select('*', {
-count: 'exact', head: true
-});
-document.getElementById('dash-clientes').innerText = totalClientes || 0;
+    try {
+// ============================================================
+        // 🟢 NUEVO: BLOQUE DE SALUDO Y FECHA (MEJORADO)
+        // ============================================================
+        
+        // 1. OBTENER EL NOMBRE DEL ADMIN
+        // Primero intentamos buscar en la tabla 'clientes' alguien con nota 'Admin'
+        let uName = "Admin"; 
+        
+        const { data: perfilAdmin } = await _supabase
+            .from('clientes')
+            .select('nombre_completo')
+            .ilike('notas', '%Admin%') // Busca que contenga la palabra Admin
+            .limit(1)
+            .maybeSingle(); // maybeSingle es seguro: no da error si no encuentra nada
+
+        if (perfilAdmin && perfilAdmin.nombre_completo) {
+            // ¡ENCONTRADO! Usamos el nombre que guardaste con crearPerfilAdmin()
+            uName = perfilAdmin.nombre_completo;
+        } else {
+            // RESPALDO: Si no hay perfil creado, usamos el correo del Login
+            const { data: { user } } = await _supabase.auth.getUser();
+            if (user && user.email) {
+                let temp = user.email.split('@')[0];
+                uName = temp.charAt(0).toUpperCase() + temp.slice(1);
+            }
+        }
+        
+        // 2. OBTENER HORA PARA EL SALUDO
+        const now = new Date();
+        const h = now.getHours();
+        let saludo = h < 12 ? "Buenos días" : h < 20 ? "Buenas tardes" : "Buenas noches";
+
+        // 3. FORMATEAR FECHA: "Lunes, 02 Febrero, 2026"
+        const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const fechaTxt = `${dias[now.getDay()]}, ${now.getDate().toString().padStart(2,'0')} ${meses[now.getMonth()]}, ${now.getFullYear()}`;
+
+        // 4. INYECTAR EN EL HTML
+        const dashCont = document.getElementById('seccion-inicio');
+        if (dashCont) {
+            let wHeader = document.getElementById('welcome-header-dinamico');
+            if (!wHeader) {
+                wHeader = document.createElement('div');
+                wHeader.id = 'welcome-header-dinamico';
+                wHeader.className = 'welcome-header'; 
+                dashCont.insertBefore(wHeader, dashCont.firstChild);
+            }
+            wHeader.innerHTML = `
+                <h2 class="welcome-title">${saludo}, ${uName}</h2>
+                <div class="welcome-date">${fechaTxt}</div>
+            `;
+        }
+        // ============================================================
+        // 🔴 FIN DEL BLOQUE NUEVO
+        // ============================================================
+
+
+        // 1. Contadores (TU CÓDIGO ORIGINAL INTACTO ABAJO) 👇
+        const {
+            count: totalClientes
+        } = await _supabase.from('clientes').select('*', {
+            count: 'exact',
+            head: true
+        });
+        document.getElementById('dash-clientes').innerText = totalClientes || 0;
 
 // 2. Cálculos Financieros
 let cap = 0,
