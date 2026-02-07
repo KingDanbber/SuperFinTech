@@ -453,24 +453,59 @@ document.getElementById('saldo-ahorro-display').innerText = `$${s.toFixed(2)}`;
 }
 
 async function movimientoAhorro() {
-const c = document.getElementById('select-clientes-a').value, m = parseFloat(document.getElementById('monto-ahorro').value), t = document.getElementById('tipo-ahorro').value, con = document.getElementById('concepto-ahorro').value;
-if (!c || !m) return alert("Selecciona cliente y monto");
+    // 1. Obtener datos del formulario
+    const c = document.getElementById('select-clientes-a').value;
+    const m = parseFloat(document.getElementById('monto-ahorro').value);
+    const t = document.getElementById('tipo-ahorro').value;
+    const con = document.getElementById('concepto-ahorro').value;
 
-await _supabase.from('movimientos_ahorro').insert([{
-cliente_id: c,
-monto: m,
-tipo: t,
-concepto: con,
-fecha_movimiento: new Date().toISOString()
-}]);
+    if (!c || !m) return alert("Selecciona cliente y monto");
 
-document.getElementById('monto-ahorro').value = '';
-document.getElementById('concepto-ahorro').value = '';
-alert("Registrado correctamente");
-verSaldoAhorro();
-cargarDashboard();
+    // 2. Insertar en Supabase (Tu lógica original)
+    const { error } = await _supabase.from('movimientos_ahorro').insert([{
+        cliente_id: c,
+        monto: m,
+        tipo: t,
+        concepto: con,
+        fecha_movimiento: new Date().toISOString()
+    }]);
+
+    if (error) {
+        alert("Error al guardar: " + error.message);
+        return;
+    }
+
+    // 3. --- NUEVA LÓGICA DE WHATSAPP ---
+    
+    // A) Buscamos el nombre y teléfono del cliente
+    const { data: cliente } = await _supabase
+        .from('clientes')
+        .select('nombre_completo, telefono')
+        .eq('id', c)
+        .single();
+
+    const mensajeExito = "✅ Registrado correctamente";
+
+    // B) Si el cliente existe y tiene teléfono, preguntamos
+    if (cliente && cliente.telefono) {
+        const deseaEnviar = confirm(`${mensajeExito}\n\n¿Deseas enviar comprobante por WhatsApp? 📱`);
+        
+        if (deseaEnviar) {
+            // Llamamos a la función auxiliar (ver paso 2 abajo)
+            // Pasamos 'con' (concepto) como el dato de la semana/descripción
+            whatsappMovimientoAhorro(cliente.nombre_completo, cliente.telefono, t, m, con);
+        }
+    } else {
+        // Si no tiene teléfono, solo avisamos
+        alert(mensajeExito);
+    }
+
+    // 4. Limpiar y recargar
+    document.getElementById('monto-ahorro').value = '';
+    document.getElementById('concepto-ahorro').value = '';
+    verSaldoAhorro();
+    cargarDashboard();
 }
-
 
 // --- HISTORIAL INDIVIDUAL (CON CORRECCIÓN DE DINERO) ---
 async function abrirHistorial(pid) {
