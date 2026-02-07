@@ -1044,3 +1044,24 @@ function whatsappAhorro(nombre, telefono, monto, semana) {
     const msg = `¡Hola ${nombre}! 🌟\n\n✅ Confirmo que recibí tu ahorro.\n💰 Cantidad: $${monto}\n🗓️ Semana: ${semana}\n\n¡Sigue así! Tu meta está más cerca. 🚀`;
     window.open(`https://wa.me/${cel}?text=${encodeURIComponent(msg)}`, '_blank');
 }
+
+// Función para generar el mensaje de Ahorro
+function whatsappMovimientoAhorro(nombre, telefono, tipo, monto, concepto) {
+    const cel = formatearCelular(telefono); // Usa la función formatearCelular que te di antes
+    if (!cel) return;
+
+    let mensaje = "";
+    
+    // Detectamos si es ingreso (depósito) o egreso (retiro)
+    // Ajusta 'ingreso' según como lo tengas en el value de tu <select id="tipo-ahorro">
+    // Si tus valores son 'deposito' y 'retiro', cambia la condición abajo.
+    const esDeposito = tipo.toLowerCase().includes('ingreso') || tipo.toLowerCase().includes('deposito');
+
+    if (esDeposito) {
+        mensaje = `¡Hola ${nombre}! 🐷\n\n✅ *Depósito Recibido*\n💰 Monto: $${monto}\n📝 Concepto/Semana: ${concepto}\n\n¡Tu ahorro sigue creciendo en SuperFinTech! 🚀`;
+    } else {
+        mensaje = `¡Hola ${nombre}! 👋\n\n💸 *Retiro Exitoso*\n💰 Monto entregado: $${monto}\n📝 Concepto: ${concepto}\n\nQuedo a la orden.`;
+    }
+
+    window.open(`https://wa.me/${cel}?text=${encodeURIComponent(mensaje)}`, '_blank');
+}
