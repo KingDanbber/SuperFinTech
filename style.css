@@ -628,3 +628,29 @@
 .btn-wa-pro:hover {
     background-color: #1ebc57; /* Verde un poco más oscuro */
 }
+
+/* === HEADER DE BIENVENIDA (Dashboard) === */
+.welcome-header {
+    margin-bottom: 25px;
+    padding-left: 5px; /* Un pequeño respiro a la izquierda */
+}
+
+.welcome-title {
+    font-size: 1.8em;
+    font-weight: 800;
+    margin: 0;
+    /* Degradado sutil y elegante */
+    background: linear-gradient(90deg, #10b981, #3b82f6); 
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+}
+
+.welcome-date {
+    font-size: 0.85em;
+    color: var(--sec);
+    text-transform: uppercase; /* Todo mayúsculas para toque minimalista */
+    letter-spacing: 1px; /* Espaciado entre letras */
+    margin-top: 5px;
+    font-weight: 500;
+}
